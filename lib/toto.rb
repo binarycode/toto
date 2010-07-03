@@ -24,6 +24,7 @@ module Toto
     :pages => "templates/pages",
     :articles => "articles"
   }
+  HAVE_BYTESIZE = ''.respond_to?(:bytesize)
 
   def self.env
     ENV['RACK_ENV'] || 'production'
@@ -338,7 +339,9 @@ module Toto
       response = @site.go(route, *(mime ? mime : []), env)
 
       @response.body = [response[:body]]
-      @response['Content-Length'] = response[:body].length.to_s unless response[:body].empty?
+      # Should really just use the middleware instead, but w/e.
+      sizes = @response.body.map { |s| HAVE_BYTESIZE ? s.bytesize : s.size }
+      @response['Content-Length'] = sizes.inject(:+).to_s
       @response['Content-Type']   = Rack::Mime.mime_type(".#{response[:type]}")
 
       # Set http cache headers
