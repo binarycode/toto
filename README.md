@@ -152,6 +152,8 @@ you could add `set :author, 'John Galt'` inside the `Toto::Server.new` block. He
       "<font style='font-size:300%'>toto, we're not in Kansas anymore (#{code})</font>"
     end
 
+    set :per_page,    10                                        # display this many articles per page
+
 thanks
 ------
 

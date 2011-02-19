@@ -88,7 +88,7 @@ module Toto
       end}.merge archives
     end
 
-    def archives filter = "", page = nil
+    def archives filter = ""
       entries = ! self.articles.empty??
         self.articles.select do |a|
           filter !~ /^\d{4}/ || File.basename(a) =~ /^#{filter}/
@@ -113,6 +113,7 @@ module Toto
       context = lambda do |data, page|
         Context.new(data, @config, path, env).render(page, type)
       end
+
       body, status = if Context.new.respond_to?(:"to_#{type}")
         if route.first =~ /\d{4}/
           case route.size
@@ -318,7 +319,7 @@ module Toto
       :error => lambda {|code|                              # The HTML for your error page
         "<font style='font-size:300%'>toto, we're not in Kansas anymore (#{code})</font>"
       },
-      :per_page => 10
+      :per_page => 10                                       # display this many articles per page
     }
     def initialize obj
       self.update Defaults
