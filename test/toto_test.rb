@@ -6,7 +6,7 @@ AUTHOR = "toto"
 
 context Toto do
   setup do
-    @config = Toto::Config.new(:markdown => true, :author => AUTHOR, :url => URL)
+    @config = Toto::Config.new(:markdown => true, :author => AUTHOR, :url => URL, :per_page => 3)
     @toto = Rack::MockRequest.new(Toto::Server.new(@config))
     Toto::Paths[:articles] = "test/articles"
     Toto::Paths[:pages] = "test/templates"
@@ -280,6 +280,41 @@ context Toto do
   context "extensions to the core Ruby library" do
     should("respond to iso8601") { Date.today }.respond_to?(:iso8601)
   end
+
+  context "paginated by" do
+    context "first page" do
+      setup do
+        [@toto.get("/page/1"), @toto.get("/")]
+      end
+
+      asserts("page is 1")              { topic.first.body }.includes_html("p" => "page number: 1")
+      should("be equal to index page")  { topic.first.body }.equals { topic.last.body }
+    end
+
+    context "second page" do
+      setup { @toto.get("/page/2") }
+
+      asserts("returns a 200")                    { topic.status }.equals 200
+      asserts("page is 2")                        { topic.body }.includes_html("p" => "page number: 2")
+      should("include a couple of article")       { topic.body }.includes_elements("#articles li", 2)
+      should("include articles from second page") { topic.body }.includes_html("#articles li" => /The Wonderful Wizard of Oz/)
+    end
+
+    context "bazillion page" do
+      setup { @toto.get("/page/10000") }
+      should("returns a 404") { topic.status }.equals 404
+    end
+
+    context "custom number of items" do
+      setup do
+        @config[:per_page] = 4
+        @toto.get("/")
+      end
+
+      should("have four articles") { topic.body }.includes_elements("#articles li", 4)
+    end
+  end
+
 end
 
 

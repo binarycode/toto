@@ -72,14 +72,23 @@ module Toto
       @config.set key, value
     end
 
-    def index type = :html
-      articles = type == :html ? self.articles.reverse : self.articles
-      {:articles => articles.map do |article|
+    def index type = :html, page_num = 0
+      articles = self.articles
+
+      if type == :html
+        page_num = page_num.to_i
+        page_num -= 1 unless page_num == 0
+        articles = articles.reverse[@config[:per_page] * page_num, @config[:per_page]]
+      end
+
+      return nil if articles.nil?
+
+      {:page_num => (page_num + 1), :articles => articles.map do |article|
         Article.new article, @config
       end}.merge archives
     end
 
-    def archives filter = ""
+    def archives filter = "", page = nil
       entries = ! self.articles.empty??
         self.articles.select do |a|
           filter !~ /^\d{4}/ || File.basename(a) =~ /^#{filter}/
@@ -87,7 +96,7 @@ module Toto
           Article.new article, @config
         end : []
 
-      return :archives => Archives.new(entries, @config)
+      { :archives => Archives.new(entries, @config) }
     end
 
     def article route
@@ -104,7 +113,6 @@ module Toto
       context = lambda do |data, page|
         Context.new(data, @config, path, env).render(page, type)
       end
-
       body, status = if Context.new.respond_to?(:"to_#{type}")
         if route.first =~ /\d{4}/
           case route.size
@@ -113,6 +121,13 @@ module Toto
             when 4
               context[article(route), :article]
             else http 400
+          end
+        elsif route.first == "page" && route.size == 2
+          data = index(type, route[1])
+          if data.nil?
+            http 404
+          else
+            context[data, :index]
           end
         elsif respond_to?(path)
           context[send(path, type), path.to_sym]
@@ -302,7 +317,8 @@ module Toto
       },
       :error => lambda {|code|                              # The HTML for your error page
         "<font style='font-size:300%'>toto, we're not in Kansas anymore (#{code})</font>"
-      }
+      },
+      :per_page => 10
     }
     def initialize obj
       self.update Defaults

@@ -1,5 +1,6 @@
 <ul id="articles">
-  <% for article in articles[0...3] %>
+  <%# for article in articles[0...3] %>
+  <% articles.each do |article| %>
     <li><%= article %></li>
   <% end %>
 </ul>
@@ -11,3 +12,5 @@
 <!-- testing get/post parameter passing -->
 <p>request method type: <%= env['REQUEST_METHOD'] %><br/></p>
 <p>request name value pair: <%= env['QUERY_STRING'] %><br/></p>
+<!-- testing page number -->
+<p>page number: <%= page_num rescue 1 %></p>
